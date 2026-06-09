@@ -1,0 +1,34 @@
+.editor {
+  display: flex;
+  flex-flow: column;
+  height: 100vh;
+}
+
+.toolbox {
+  padding: 0.5em;
+  background-color: #414141;
+  display: flex;
+  gap: 0.5em;
+}
+
+/* .toolbox button {
+  width: 32px;
+  height: 32px;
+  position: relative;
+  font-size: 16px;
+  border: none;
+  background-color: #ccc;
+  border-radius: 0.2em;
+} */
+
+.canvasbox {
+  overflow: auto;
+  flex: 1;
+  background-color: #777;
+}
+
+.canvasbox canvas {
+  width: 1000px;
+  height: 500px;
+   
+}
