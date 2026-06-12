@@ -2,20 +2,16 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import Pricing from '@/components/pricing';
-import Header from '@/components/header'; 
-// Custom Hooks
+import Header from '@/components/header';
+
+/* ─── Custom Hooks ────────────────────────────────────────────────── */
 const useMousePosition = () => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-
   useEffect(() => {
-    const updateMousePosition = (e) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-    };
-
-    window.addEventListener('mousemove', updateMousePosition);
-    return () => window.removeEventListener('mousemove', updateMousePosition);
+    const update = (e) => setMousePosition({ x: e.clientX, y: e.clientY });
+    window.addEventListener('mousemove', update);
+    return () => window.removeEventListener('mousemove', update);
   }, []);
-
   return mousePosition;
 };
 
@@ -23,7 +19,6 @@ const useIntersectionObserver = (options = {}) => {
   const [isVisible, setIsVisible] = useState(false);
   const [hasAnimated, setHasAnimated] = useState(false);
   const ref = useRef(null);
-
   useEffect(() => {
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting && !hasAnimated) {
@@ -31,143 +26,117 @@ const useIntersectionObserver = (options = {}) => {
         setHasAnimated(true);
       }
     }, { threshold: 0.1, ...options });
-
-    if (ref.current) {
-      observer.observe(ref.current);
-    }
-
-    return () => {
-      if (ref.current) {
-        observer.unobserve(ref.current);
-      }
-    };
-  }, [hasAnimated, options]);
-
+    if (ref.current) observer.observe(ref.current);
+    return () => { if (ref.current) observer.unobserve(ref.current); };
+  }, [hasAnimated]);
   return [ref, isVisible];
 };
 
 const useParallax = (speed = 0.5) => {
   const [offset, setOffset] = useState(0);
-
   useEffect(() => {
-    const handleScroll = () => {
-      setOffset(window.pageYOffset * speed);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    const handle = () => setOffset(window.pageYOffset * speed);
+    window.addEventListener('scroll', handle);
+    return () => window.removeEventListener('scroll', handle);
   }, [speed]);
-
   return offset;
 };
 
-// Custom Cursor Component
+/* ─── Custom Cursor ────────────────────────────────────────────────── */
 const CustomCursor = () => {
   const mousePosition = useMousePosition();
   const [isHovering, setIsHovering] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-
   useEffect(() => {
     setIsMobile(window.matchMedia('(max-width: 768px)').matches);
-    
-    const handleMouseOver = (e) => {
-      if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A' || e.target.classList.contains('hoverable')) {
-        setIsHovering(true);
-      } else {
-        setIsHovering(false);
-      }
+    const handle = (e) => {
+      setIsHovering(
+        e.target.tagName === 'BUTTON' ||
+        e.target.tagName === 'A' ||
+        e.target.classList.contains('hoverable')
+      );
     };
-
-    document.addEventListener('mouseover', handleMouseOver);
-    return () => document.removeEventListener('mouseover', handleMouseOver);
+    document.addEventListener('mouseover', handle);
+    return () => document.removeEventListener('mouseover', handle);
   }, []);
-
   if (isMobile) return null;
-
   return (
     <div
-      className="fixed w-5 h-5 bg-blue-500 rounded-full pointer-events-none z-50 mix-blend-difference transition-transform duration-150"
+      className="fixed pointer-events-none z-50"
       style={{
-        left: `${mousePosition.x}px`,
-        top: `${mousePosition.y}px`,
-        transform: `translate(-50%, -50%) scale(${isHovering ? 2 : 1})`,
+        left: mousePosition.x,
+        top: mousePosition.y,
+        transform: 'translate(-50%, -50%)',
+        transition: 'transform 0.12s ease',
       }}
     >
-      <div className="w-full h-full bg-cyan-400 rounded-full animate-ping opacity-75"></div>
+      <div
+        style={{
+          width: isHovering ? 36 : 14,
+          height: isHovering ? 36 : 14,
+          borderRadius: '50%',
+          background: isHovering ? 'transparent' : '#c8ff00',
+          border: isHovering ? '1.5px solid #c8ff00' : 'none',
+          transition: 'all 0.2s ease',
+        }}
+      />
     </div>
   );
 };
 
-// Floating Shapes Component
-const FloatingShapes = () => {
-  const parallaxOffset = useParallax(0.3);
-  
-  const shapes = useMemo(() => [
-    { color: 'from-blue-500 to-cyan-500', size: 'w-96 h-96', top: '10%', left: '5%', delay: 0 },
-    { color: 'from-purple-500 to-pink-500', size: 'w-80 h-80', top: '50%', right: '10%', delay: 1 },
-    { color: 'from-cyan-500 to-blue-600', size: 'w-72 h-72', bottom: '10%', left: '15%', delay: 2 },
-    { color: 'from-pink-500 to-purple-600', size: 'w-64 h-64', top: '30%', right: '20%', delay: 1.5 },
-  ], []);
-
+/* ─── Ambient Background ───────────────────────────────────────────── */
+const AmbientBackground = () => {
+  const parallaxOffset = useParallax(0.15);
   return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-      {shapes.map((shape, index) => (
-        <motion.div
-          key={index}
-          className={`absolute ${shape.size} bg-gradient-to-r ${shape.color} blur-3xl opacity-20 rounded-full`}
-          style={{
-            top: shape.top,
-            left: shape.left,
-            right: shape.right,
-            bottom: shape.bottom,
-            transform: `translateY(${parallaxOffset}px)`,
-          }}
-          animate={{
-            scale: [1, 1.2, 1],
-            rotate: [0, 90, 0],
-            opacity: [0.2, 0.3, 0.2],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            delay: shape.delay,
-            ease: 'easeInOut',
-          }}
-        />
-      ))}
+    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0" style={{ background: '#080808' }}>
+      <div style={{
+        position: 'absolute', width: '60vw', height: '60vw', top: '-10%', left: '-10%',
+        borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(139,92,246,0.07) 0%, transparent 70%)',
+        transform: `translateY(${parallaxOffset * 0.5}px)`,
+      }} />
+      <div style={{
+        position: 'absolute', width: '50vw', height: '50vw', bottom: '5%', right: '-5%',
+        borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(200,255,0,0.05) 0%, transparent 70%)',
+        transform: `translateY(${-parallaxOffset * 0.3}px)`,
+      }} />
+      <div style={{
+        position: 'absolute', width: '40vw', height: '40vw', top: '40%', left: '30%',
+        borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(139,92,246,0.04) 0%, transparent 70%)',
+      }} />
     </div>
   );
 };
 
-// Glass Navigation Component
+/* ─── Glass Nav ─────────────────────────────────────────────────────── */
 const GlassNavigation = () => {
   const [activeSection, setActiveSection] = useState('home');
-
   const navItems = ['Home', 'Features', 'Pricing', 'Contact'];
-
   const scrollToSection = (section) => {
-    const element = document.getElementById(section.toLowerCase());
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-      setActiveSection(section.toLowerCase());
-    }
+    const el = document.getElementById(section.toLowerCase());
+    if (el) { el.scrollIntoView({ behavior: 'smooth' }); setActiveSection(section.toLowerCase()); }
   };
-
   return (
-    <nav className="fixed top-4 left-1/2 transform -translate-x-1/2 z-40 backdrop-blur-lg bg-white/10 border border-white/20 rounded-full px-8 py-3">
-      <ul className="flex space-x-8">
+    <nav style={{
+      position: 'fixed', top: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 40,
+      backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
+      background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+      borderRadius: 9999, padding: '10px 28px',
+    }}>
+      <ul style={{ display: 'flex', gap: 28, listStyle: 'none', margin: 0, padding: 0 }}>
         {navItems.map((item) => (
           <li key={item}>
-            <button
-              onClick={() => scrollToSection(item)}
-              className={`hoverable text-sm font-medium transition-all duration-300 ${
-                activeSection === item.toLowerCase()
-                  ? 'text-cyan-400 scale-110'
-                  : 'text-white/70 hover:text-white'
-              }`}
-            >
-              {item}
-            </button>
+            <button onClick={() => scrollToSection(item)} className="hoverable" style={{
+              background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500,
+              letterSpacing: '0.03em',
+              color: activeSection === item.toLowerCase() ? '#c8ff00' : 'rgba(255,255,255,0.5)',
+              transition: 'color 0.3s ease', padding: '2px 0',
+            }}
+              onMouseEnter={(e) => { if (activeSection !== item.toLowerCase()) e.target.style.color = 'rgba(255,255,255,0.85)'; }}
+              onMouseLeave={(e) => { if (activeSection !== item.toLowerCase()) e.target.style.color = 'rgba(255,255,255,0.5)'; }}
+            >{item}</button>
           </li>
         ))}
       </ul>
@@ -175,106 +144,140 @@ const GlassNavigation = () => {
   );
 };
 
-// Animated Counter Component
+/* ─── Animated Counter ─────────────────────────────────────────────── */
 const AnimatedCounter = ({ target, duration = 2000, suffix = '' }) => {
   const [count, setCount] = useState(0);
   const [ref, isVisible] = useIntersectionObserver();
-
   useEffect(() => {
     if (!isVisible) return;
-
     let startTime;
-    const animate = (currentTime) => {
-      if (!startTime) startTime = currentTime;
-      const progress = Math.min((currentTime - startTime) / duration, 1);
-      
+    const animate = (t) => {
+      if (!startTime) startTime = t;
+      const progress = Math.min((t - startTime) / duration, 1);
       setCount(Math.floor(progress * target));
-
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      } else {
-        setCount(target);
-      }
+      if (progress < 1) requestAnimationFrame(animate);
+      else setCount(target);
     };
-
     requestAnimationFrame(animate);
   }, [isVisible, target, duration]);
-
   return (
-    <div ref={ref} className="text-6xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
+    <div ref={ref} style={{
+      fontSize: 'clamp(2.5rem, 5vw, 3.5rem)', fontWeight: 800, fontFamily: "'Syne', sans-serif",
+      background: 'linear-gradient(135deg, #fff 0%, #c8ff00 100%)',
+      WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', lineHeight: 1,
+    }}>
       {count}{suffix}
     </div>
   );
 };
 
-// Hero Section Component
+/* ─── Hero Section ──────────────────────────────────────────────────── */
 const HeroSection = () => {
   const [glitchActive, setGlitchActive] = useState(false);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const demoRef = useRef(null);
 
   useEffect(() => {
-    const glitchInterval = setInterval(() => {
+    const interval = setInterval(() => {
       setGlitchActive(true);
-      setTimeout(() => setGlitchActive(false), 100);
-    }, 3000);
-
-    return () => clearInterval(glitchInterval);
+      setTimeout(() => setGlitchActive(false), 120);
+    }, 4000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleMouseMove = useCallback((e) => {
     if (!demoRef.current) return;
     const rect = demoRef.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left - rect.width / 2) / 20;
-    const y = (e.clientY - rect.top - rect.height / 2) / 20;
+    const x = (e.clientX - rect.left - rect.width / 2) / 25;
+    const y = (e.clientY - rect.top - rect.height / 2) / 25;
     setTilt({ x: -y, y: x });
   }, []);
 
-  const handleMouseLeave = useCallback(() => {
-    setTilt({ x: 0, y: 0 });
-  }, []);
+  const handleMouseLeave = useCallback(() => setTilt({ x: 0, y: 0 }), []);
 
   return (
-    <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      <div className="container mx-auto px-6 z-10">
+    <section id="home" style={{
+      position: 'relative', minHeight: '100vh',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      overflow: 'hidden', padding: '80px 20px 40px',
+    }}>
+      <div style={{ maxWidth: 1100, width: '100%', margin: '0 auto', position: 'relative', zIndex: 10 }}>
         <motion.div
-          initial={{ opacity: 0, y: 50 }}
+          initial={{ opacity: 0, y: 60 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1 }}
-          className="text-center"
+          transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+          style={{ textAlign: 'center' }}
         >
-          <motion.h1
-            className={`text-7xl md:text-9xl font-black mb-6 bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-500 bg-clip-text text-transparent ${
-              glitchActive ? 'animate-pulse' : ''
-            }`}
-            style={{
-              textShadow: glitchActive ? '2px 2px #ff00de, -2px -2px #00ffff' : 'none',
-            }}
-          >
-            The Future of
-            <br />
-            Image Creation
-          </motion.h1>
-          
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5, duration: 1 }}
-            className="text-xl md:text-2xl text-white/70 mb-12 max-w-3xl mx-auto"
-          >
-            Harness the power of quantum-powered AI to transform your creative vision into reality
-          </motion.p>
-
+          {/* Eyebrow */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1, duration: 0.8 }}
-            className="flex flex-col sm:flex-row gap-6 justify-center mb-16"
+            transition={{ delay: 0.2, duration: 0.7 }}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              background: 'rgba(200,255,0,0.06)', border: '1px solid rgba(200,255,0,0.2)',
+              borderRadius: 9999, padding: '6px 16px', marginBottom: 32,
+            }}
           >
-            <button className="hoverable px-10 py-4 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full text-lg font-bold hover:scale-105 hover:shadow-2xl hover:shadow-cyan-500/50 transition-all duration-300">
-              Experience the Magic
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#c8ff00', display: 'inline-block', boxShadow: '0 0 8px #c8ff00' }} />
+            <span style={{ fontSize: 12, fontWeight: 600, color: '#c8ff00', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              AI-Powered Image Editing
+            </span>
+          </motion.div>
+
+          {/* Headline */}
+          <motion.h1 style={{
+            fontFamily: "'Syne', sans-serif",
+            fontSize: 'clamp(3.2rem, 9vw, 8rem)',
+            fontWeight: 800, lineHeight: 0.95, letterSpacing: '-0.03em',
+            marginBottom: 28, color: '#fff',
+          }}>
+            <span style={{ display: 'block' }}>Edit images</span>
+            <span style={{
+              display: 'block',
+              background: 'linear-gradient(90deg, #c8ff00 0%, #8B5CF6 100%)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+            }}>
+              without limits.
+            </span>
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            transition={{ delay: 0.5, duration: 0.9 }}
+            style={{
+              fontSize: 'clamp(1rem, 2vw, 1.2rem)', color: 'rgba(255,255,255,0.45)',
+              maxWidth: 560, margin: '0 auto 44px', lineHeight: 1.7, fontWeight: 400,
+            }}
+          >
+            Harness the power of AI to transform your creative vision — background removal, upscaling, style transfer and more, in seconds.
+          </motion.p>
+
+          {/* CTAs */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8, duration: 0.7 }}
+            style={{ display: 'flex', flexWrap: 'wrap', gap: 14, justifyContent: 'center', marginBottom: 72 }}
+          >
+            <button className="hoverable" style={{
+              padding: '14px 32px', background: '#c8ff00', color: '#080808', border: 'none',
+              borderRadius: 9999, fontSize: 15, fontWeight: 700, cursor: 'pointer',
+              transition: 'all 0.25s ease', letterSpacing: '0.01em',
+              boxShadow: '0 0 32px rgba(200,255,0,0.25)',
+            }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.boxShadow = '0 0 48px rgba(200,255,0,0.4)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 0 32px rgba(200,255,0,0.25)'; }}
+            >
+              Start Editing Free
             </button>
-            <button className="hoverable px-10 py-4 backdrop-blur-lg bg-white/10 border border-white/20 rounded-full text-lg font-bold hover:scale-105 hover:bg-white/20 transition-all duration-300">
+            <button className="hoverable" style={{
+              padding: '14px 32px', background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(12px)',
+              color: 'rgba(255,255,255,0.8)', border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: 9999, fontSize: 15, fontWeight: 600, cursor: 'pointer', transition: 'all 0.25s ease',
+            }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
+            >
               Watch Demo
             </button>
           </motion.div>
@@ -282,40 +285,90 @@ const HeroSection = () => {
           {/* 3D Demo Interface */}
           <motion.div
             ref={demoRef}
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 1.5, duration: 1 }}
+            initial={{ opacity: 0, y: 40, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ delay: 1.2, duration: 1, ease: [0.22, 1, 0.36, 1] }}
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
-            className="hoverable relative max-w-5xl mx-auto perspective-1000"
+            className="hoverable"
             style={{
-              transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
-              transition: 'transform 0.2s ease-out',
+              maxWidth: 860, margin: '0 auto',
+              transform: `perspective(1200px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
+              transition: 'transform 0.25s ease-out',
             }}
           >
-            <div className="backdrop-blur-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/20 rounded-3xl p-8 shadow-2xl">
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                {[...Array(3)].map((_, i) => (
-                  <motion.div
-                    key={i}
-                    className="aspect-square bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl"
-                    animate={{
-                      y: [0, -10, 0],
+            <div style={{
+              backdropFilter: 'blur(32px)', WebkitBackdropFilter: 'blur(32px)',
+              background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: 28, padding: 'clamp(20px, 4vw, 36px)',
+              boxShadow: '0 40px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)',
+            }}>
+              {/* Toolbar */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {['#ff5f57','#febc2e','#28c840'].map((c, i) => (
+                    <div key={i} style={{ width: 10, height: 10, borderRadius: '50%', background: c, opacity: 0.7 }} />
+                  ))}
+                </div>
+                <div style={{ flex: 1, height: 28, background: 'rgba(255,255,255,0.04)', borderRadius: 6, border: '1px solid rgba(255,255,255,0.06)' }} />
+                <div style={{ width: 28, height: 28, background: 'rgba(200,255,0,0.12)', borderRadius: 6, border: '1px solid rgba(200,255,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#c8ff00', boxShadow: '0 0 6px #c8ff00' }} />
+                </div>
+              </div>
+
+              {/* Image grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
+                {[
+                  { from: 'rgba(200,255,0,0.08)', to: 'rgba(139,92,246,0.12)', delay: 0, badge: 'PROCESSING', badgeColor: '#c8ff00', badgeBg: 'rgba(200,255,0,0.15)', badgeBorder: 'rgba(200,255,0,0.3)' },
+                  { from: 'rgba(139,92,246,0.12)', to: 'rgba(200,255,0,0.06)', delay: 0.15, badge: 'DONE ✓', badgeColor: '#a78bfa', badgeBg: 'rgba(139,92,246,0.15)', badgeBorder: 'rgba(139,92,246,0.3)' },
+                  { from: 'rgba(255,255,255,0.04)', to: 'rgba(200,255,0,0.1)', delay: 0.3, badge: null },
+                ].map((item, i) => (
+                  <motion.div key={i}
+                    style={{
+                      aspectRatio: '4/3', borderRadius: 14,
+                      background: `linear-gradient(135deg, ${item.from}, ${item.to})`,
+                      border: '1px solid rgba(255,255,255,0.06)', position: 'relative', overflow: 'hidden',
                     }}
-                    transition={{
-                      duration: 2,
-                      repeat: Infinity,
-                      delay: i * 0.2,
-                    }}
-                  />
+                    animate={{ y: [0, -6, 0] }}
+                    transition={{ duration: 3, repeat: Infinity, delay: item.delay, ease: 'easeInOut' }}
+                  >
+                    <motion.div
+                      style={{ position: 'absolute', left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, rgba(200,255,0,0.5), transparent)' }}
+                      animate={{ top: ['0%', '100%'] }}
+                      transition={{ duration: 2.5, repeat: Infinity, delay: item.delay, ease: 'linear' }}
+                    />
+                    {item.badge && (
+                      <div style={{
+                        position: 'absolute', bottom: 8, left: 8,
+                        background: item.badgeBg, border: `1px solid ${item.badgeBorder}`,
+                        borderRadius: 6, padding: '3px 8px', fontSize: 9, fontWeight: 700,
+                        color: item.badgeColor, letterSpacing: '0.06em',
+                      }}>{item.badge}</div>
+                    )}
+                  </motion.div>
                 ))}
               </div>
-              <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+
+              {/* Progress bar */}
+              <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 9999, height: 3, overflow: 'hidden', marginBottom: 12 }}>
                 <motion.div
-                  className="h-full bg-gradient-to-r from-blue-500 to-cyan-500"
+                  style={{ height: '100%', background: 'linear-gradient(90deg, #c8ff00, #8B5CF6)', borderRadius: 9999 }}
                   animate={{ width: ['0%', '100%'] }}
-                  transition={{ duration: 2, repeat: Infinity }}
+                  transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
                 />
+              </div>
+
+              {/* Stats row */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+                {[{ label: 'Removed BG', val: '3 items' }, { label: 'Upscaled', val: '2×' }, { label: 'Time saved', val: '~4 min' }].map((s, i) => (
+                  <div key={i} style={{
+                    flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+                    borderRadius: 10, padding: '10px 14px', textAlign: 'center',
+                  }}>
+                    <div style={{ fontSize: 'clamp(11px, 2vw, 13px)', fontWeight: 700, color: '#fff' }}>{s.val}</div>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>{s.label}</div>
+                  </div>
+                ))}
               </div>
             </div>
           </motion.div>
@@ -325,100 +378,68 @@ const HeroSection = () => {
   );
 };
 
-// Feature Card Component
+/* ─── Feature Card ──────────────────────────────────────────────────── */
 const FeatureCard = ({ icon, title, description, delay = 0 }) => {
   const [ref, isVisible] = useIntersectionObserver();
-
+  const [hovered, setHovered] = useState(false);
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y: 50 }}
+      initial={{ opacity: 0, y: 40 }}
       animate={isVisible ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.6, delay }}
-      className="hoverable group backdrop-blur-lg bg-white/5 border border-white/10 rounded-3xl p-8 hover:bg-white/10 hover:border-white/30 hover:scale-105 hover:rotate-1 transition-all duration-500"
+      transition={{ duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] }}
+      className="hoverable"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+        background: hovered ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)',
+        border: `1px solid ${hovered ? 'rgba(200,255,0,0.2)' : 'rgba(255,255,255,0.07)'}`,
+        borderRadius: 24, padding: 'clamp(20px, 3vw, 32px)',
+        transition: 'all 0.35s ease',
+        transform: hovered ? 'translateY(-4px)' : 'translateY(0)',
+        boxShadow: hovered ? '0 20px 48px rgba(0,0,0,0.4), 0 0 0 1px rgba(200,255,0,0.08)' : '0 4px 24px rgba(0,0,0,0.2)',
+        cursor: 'default', position: 'relative', overflow: 'hidden',
+      }}
     >
-      <div className="text-6xl mb-6 group-hover:scale-110 transition-transform duration-300">
-        {icon}
-      </div>
-      <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-        {title}
-      </h3>
-      <p className="text-white/70 leading-relaxed">
-        {description}
-      </p>
+      <div style={{ position: 'absolute', top: 0, left: '20%', right: '20%', height: 1, background: 'linear-gradient(90deg, transparent, rgba(200,255,0,0.4), transparent)', opacity: hovered ? 1 : 0, transition: 'opacity 0.3s ease' }} />
+      <div style={{ fontSize: 'clamp(2rem, 4vw, 2.5rem)', marginBottom: 18, display: 'inline-block', transition: 'transform 0.3s ease', transform: hovered ? 'scale(1.1)' : 'scale(1)' }}>{icon}</div>
+      <h3 style={{ fontFamily: "'Syne', sans-serif", fontSize: 'clamp(1rem, 2vw, 1.2rem)', fontWeight: 700, marginBottom: 10, color: '#fff', letterSpacing: '-0.01em' }}>{title}</h3>
+      <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.45)', lineHeight: 1.7, margin: 0 }}>{description}</p>
     </motion.div>
   );
 };
 
-// Features Section
+/* ─── Features Section ──────────────────────────────────────────────── */
 const FeaturesSection = () => {
   const features = [
-    {
-      icon: '🧠',
-      title: 'Neural Background Removal',
-      description: 'Advanced AI algorithms detect and remove backgrounds with pixel-perfect precision in microseconds.',
-    },
-    {
-      icon: '⚡',
-      title: 'Quantum Upscaling',
-      description: 'Enhance image resolution up to 16K using quantum-inspired neural networks without quality loss.',
-    },
-    {
-      icon: '🎨',
-      title: 'Generative Fill',
-      description: 'Fill, expand, or replace any part of your image with AI-generated content that seamlessly blends.',
-    },
-    {
-      icon: '✨',
-      title: 'Smart Object Detection',
-      description: 'Automatically identify and isolate objects, people, or elements for precise editing control.',
-    },
-    {
-      icon: '🌈',
-      title: 'Color Grading AI',
-      description: 'Professional-grade color correction and grading powered by machine learning models.',
-    },
-    {
-      icon: '🔮',
-      title: 'Style Transfer',
-      description: 'Apply artistic styles from famous paintings or create custom looks with neural style transfer.',
-    },
+    { icon: '🧠', title: 'Neural Background Removal', description: 'Advanced AI algorithms detect and remove backgrounds with pixel-perfect precision in microseconds.' },
+    { icon: '⚡', title: 'Quantum Upscaling', description: 'Enhance image resolution up to 16K using quantum-inspired neural networks without quality loss.' },
+    { icon: '🎨', title: 'Generative Fill', description: 'Fill, expand, or replace any part of your image with AI-generated content that seamlessly blends.' },
+    { icon: '✨', title: 'Smart Object Detection', description: 'Automatically identify and isolate objects, people, or elements for precise editing control.' },
+    { icon: '🌈', title: 'Color Grading AI', description: 'Professional-grade color correction and grading powered by machine learning models.' },
+    { icon: '🔮', title: 'Style Transfer', description: 'Apply artistic styles from famous paintings or create custom looks with neural style transfer.' },
   ];
-
+  const [titleRef, titleVisible] = useIntersectionObserver();
   return (
-    <section id="features" className="relative py-32">
-      <div className="container mx-auto px-6 z-10">
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ duration: 1 }}
-          className="text-center mb-20"
-        >
-          <h2 className="text-6xl md:text-7xl font-black mb-6 bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 bg-clip-text text-transparent">
-            Superpowers Unlocked
+    <section id="features" style={{ position: 'relative', padding: 'clamp(60px, 10vw, 120px) 20px' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+        <motion.div ref={titleRef} initial={{ opacity: 0, y: 30 }} animate={titleVisible ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8 }} style={{ textAlign: 'center', marginBottom: 'clamp(40px, 6vw, 72px)' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#8B5CF6', marginBottom: 16 }}>Capabilities</div>
+          <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: 'clamp(2.2rem, 5vw, 4rem)', fontWeight: 800, letterSpacing: '-0.03em', color: '#fff', margin: '0 auto 16px', maxWidth: 640 }}>
+            Everything you need to edit images at scale.
           </h2>
-          <p className="text-xl text-white/70 max-w-3xl mx-auto">
-            Cutting-edge AI capabilities that redefine what's possible in image editing
-          </p>
+          <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.4)', maxWidth: 480, margin: '0 auto' }}>Cutting-edge AI capabilities that redefine what's possible in image editing.</p>
         </motion.div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {features.map((feature, index) => (
-            <FeatureCard
-              key={index}
-              icon={feature.icon}
-              title={feature.title}
-              description={feature.description}
-              delay={index * 0.1}
-            />
-          ))}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 16 }}>
+          {features.map((feature, index) => <FeatureCard key={index} {...feature} delay={index * 0.08} />)}
         </div>
       </div>
     </section>
   );
 };
 
-// Interactive Stats Section
+/* ─── Stats Section ─────────────────────────────────────────────────── */
 const InteractiveStats = () => {
   const stats = [
     { target: 50, suffix: 'M+', label: 'Images Created' },
@@ -426,15 +447,19 @@ const InteractiveStats = () => {
     { target: 120, suffix: 'K+', label: 'Active Users' },
     { target: 4, suffix: '.9★', label: 'User Rating' },
   ];
-
   return (
-    <section className="relative py-20">
-      <div className="container mx-auto px-6 z-10">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+    <section style={{ position: 'relative', padding: 'clamp(40px, 6vw, 80px) 20px' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+        <div style={{
+          backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+          background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)',
+          borderRadius: 24, padding: 'clamp(28px, 4vw, 48px)',
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 32,
+        }}>
           {stats.map((stat, index) => (
-            <div key={index} className="text-center">
+            <div key={index} style={{ textAlign: 'center' }}>
               <AnimatedCounter target={stat.target} suffix={stat.suffix} />
-              <p className="text-white/60 mt-4 text-lg">{stat.label}</p>
+              <p style={{ color: 'rgba(255,255,255,0.35)', marginTop: 8, fontSize: 13, fontWeight: 500, letterSpacing: '0.04em' }}>{stat.label}</p>
             </div>
           ))}
         </div>
@@ -443,192 +468,48 @@ const InteractiveStats = () => {
   );
 };
 
-// Pricing Card Component
-const PricingCard = ({ plan, price, features, featured = false, buttonText = 'Get Started' }) => {
-  const [ref, isVisible] = useIntersectionObserver();
 
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 50 }}
-      animate={isVisible ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.6 }}
-      className={`hoverable relative backdrop-blur-lg ${
-        featured
-          ? 'bg-gradient-to-br from-blue-500/20 to-purple-500/20 border-2 border-cyan-500 scale-105'
-          : 'bg-white/5 border border-white/10'
-      } rounded-3xl p-8 hover:scale-110 transition-all duration-500`}
-    >
-      {featured && (
-        <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 px-6 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full text-sm font-bold">
-          MOST POPULAR
-        </div>
-      )}
-      
-      <h3 className="text-2xl font-bold mb-2">{plan}</h3>
-      <div className="mb-6">
-        <span className="text-5xl font-black bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-          ${price}
-        </span>
-        <span className="text-white/60">/month</span>
-      </div>
-      
-      <ul className="space-y-4 mb-8">
-        {features.map((feature, index) => (
-          <li key={index} className="flex items-center text-white/80">
-            <span className="mr-3 text-cyan-400">✓</span>
-            {feature}
-          </li>
-        ))}
-      </ul>
-      
-      <button className={`w-full py-4 rounded-full font-bold transition-all duration-300 ${
-        featured
-          ? 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:shadow-2xl hover:shadow-cyan-500/50'
-          : 'backdrop-blur-lg bg-white/10 border border-white/20 hover:bg-white/20'
-      }`}>
-        {buttonText}
-      </button>
-    </motion.div>
-  );
-};
-
-// Pricing Section
-const PricingSection = () => {
-  const plans = [
-    {
-      plan: 'Starter',
-      price: 19,
-      features: [
-        '100 AI generations/month',
-        'Basic background removal',
-        '2K upscaling',
-        'Standard support',
-      ],
-    },
-    {
-      plan: 'Pro',
-      price: 49,
-      features: [
-        'Unlimited AI generations',
-        'Advanced neural tools',
-        '16K upscaling',
-        'Priority support',
-        'API access',
-        'Custom models',
-      ],
-      featured: true,
-      buttonText: 'Unleash Power',
-    },
-    {
-      plan: 'Enterprise',
-      price: 199,
-      features: [
-        'Everything in Pro',
-        'Dedicated infrastructure',
-        'Custom integrations',
-        'White-label options',
-        '24/7 premium support',
-      ],
-    },
-  ];
-
-  return (
-    <section id="pricing" className="relative py-32">
-      <div className="container mx-auto px-6 z-10">
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ duration: 1 }}
-          className="text-center mb-20"
-        >
-          <h2 className="text-6xl md:text-7xl font-black mb-6 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 bg-clip-text text-transparent">
-            Choose Your Power Level
-          </h2>
-          <p className="text-xl text-white/70 max-w-3xl mx-auto">
-            Scale your creative capabilities with plans designed for every ambition
-          </p>
-        </motion.div>
-
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {plans.map((plan, index) => (
-            <PricingCard key={index} {...plan} />
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-};
-
-// Contact Section
+/* ─── Contact Section ───────────────────────────────────────────────── */
 const ContactSection = () => {
   const [ref, isVisible] = useIntersectionObserver();
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleSubmit = (e) => { e.preventDefault(); console.log('Form submitted:', formData); };
+  const inputStyle = {
+    width: '100%', padding: '14px 18px', background: 'rgba(255,255,255,0.04)',
+    border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, color: '#fff', fontSize: 15,
+    outline: 'none', transition: 'border-color 0.25s ease', boxSizing: 'border-box', fontFamily: 'inherit',
   };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Form submitted:', formData);
-  };
-
   return (
-    <section id="contact" className="relative py-32">
-      <div className="container mx-auto px-6 z-10">
-        <motion.div
-          ref={ref}
-          initial={{ opacity: 0, y: 50 }}
-          animate={isVisible ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.8 }}
-          className="max-w-4xl mx-auto"
-        >
-          <h2 className="text-6xl md:text-7xl font-black mb-6 text-center bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 bg-clip-text text-transparent">
-            Let's Create Together
-          </h2>
-          <p className="text-xl text-white/70 text-center mb-12">
-            Ready to revolutionize your creative workflow? Get in touch.
-          </p>
-
-          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-8 md:p-12">
-            <div className="space-y-6">
-              <div>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder="Your Name"
-                  className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:border-cyan-500 transition-colors duration-300"
-                />
-              </div>
-              <div>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="Your Email"
-                  className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:border-cyan-500 transition-colors duration-300"
-                />
-              </div>
-              <div>
-                <textarea
-                  name="message"
-                  value={formData.message}
-                  onChange={handleChange}
-                  placeholder="Your Message"
-                  rows="6"
-                  className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:border-cyan-500 transition-colors duration-300 resize-none"
-                />
-              </div>
-              <button
-                onClick={handleSubmit}
-                className="hoverable w-full py-4 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full text-lg font-bold hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/50 transition-all duration-300"
-              >
-                Send Message
-              </button>
+    <section id="contact" style={{ position: 'relative', padding: 'clamp(60px, 10vw, 120px) 20px' }}>
+      <div style={{ maxWidth: 680, margin: '0 auto' }}>
+        <motion.div ref={ref} initial={{ opacity: 0, y: 40 }} animate={isVisible ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#8B5CF6', marginBottom: 16 }}>Contact</div>
+            <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 800, letterSpacing: '-0.03em', color: '#fff', marginBottom: 16 }}>Let's create together.</h2>
+            <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.4)' }}>Ready to revolutionize your creative workflow? Get in touch.</p>
+          </div>
+          <div style={{
+            backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
+            background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 28, padding: 'clamp(24px, 4vw, 44px)',
+            boxShadow: '0 24px 64px rgba(0,0,0,0.4)',
+          }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <input type="text" name="name" value={formData.name} onChange={handleChange} placeholder="Your Name" style={inputStyle}
+                onFocus={(e) => { e.target.style.borderColor = 'rgba(200,255,0,0.4)'; }} onBlur={(e) => { e.target.style.borderColor = 'rgba(255,255,255,0.08)'; }} />
+              <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Your Email" style={inputStyle}
+                onFocus={(e) => { e.target.style.borderColor = 'rgba(200,255,0,0.4)'; }} onBlur={(e) => { e.target.style.borderColor = 'rgba(255,255,255,0.08)'; }} />
+              <textarea name="message" value={formData.message} onChange={handleChange} placeholder="Your Message" rows="5" style={{ ...inputStyle, resize: 'none' }}
+                onFocus={(e) => { e.target.style.borderColor = 'rgba(200,255,0,0.4)'; }} onBlur={(e) => { e.target.style.borderColor = 'rgba(255,255,255,0.08)'; }} />
+              <button onClick={handleSubmit} className="hoverable" style={{
+                padding: '14px 0', background: '#c8ff00', color: '#080808', border: 'none',
+                borderRadius: 9999, fontSize: 15, fontWeight: 700, cursor: 'pointer',
+                transition: 'all 0.25s ease', boxShadow: '0 0 24px rgba(200,255,0,0.2)', marginTop: 4,
+              }}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 0 40px rgba(200,255,0,0.35)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 0 24px rgba(200,255,0,0.2)'; }}
+              >Send Message</button>
             </div>
           </div>
         </motion.div>
@@ -637,58 +518,74 @@ const ContactSection = () => {
   );
 };
 
-// Footer
-const Footer = () => {
-  return (
-    <footer className="relative py-12 border-t border-white/10">
-      <div className="container mx-auto px-6 z-10">
-        <div className="flex flex-col md:flex-row justify-between items-center">
-          <div className="text-2xl font-black bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent mb-4 md:mb-0">
-            AI IMAGE STUDIO
-          </div>
-          <div className="flex space-x-8 text-white/60">
-            <a href="#" className="hoverable hover:text-cyan-400 transition-colors duration-300">Privacy</a>
-            <a href="#" className="hoverable hover:text-cyan-400 transition-colors duration-300">Terms</a>
-            <a href="#" className="hoverable hover:text-cyan-400 transition-colors duration-300">Support</a>
-          </div>
+/* ─── Footer ────────────────────────────────────────────────────────── */
+const Footer = () => (
+  <footer style={{ position: 'relative', padding: 'clamp(28px, 4vw, 48px) 20px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 20 }}>
+        <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 'clamp(1.2rem, 3vw, 1.5rem)', fontWeight: 800, letterSpacing: '-0.02em', color: '#fff' }}>
+          Off<span style={{ color: '#c8ff00' }}>Image</span>
         </div>
-        <div className="text-center mt-8 text-white/40 text-sm">
-          © 2025 AI Image Studio. Powered by Quantum Neural Networks.
+        <div style={{ display: 'flex', gap: 28 }}>
+          {['Privacy', 'Terms', 'Support'].map((link) => (
+            <a key={link} href="#" className="hoverable" style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', textDecoration: 'none', transition: 'color 0.2s ease' }}
+              onMouseEnter={(e) => { e.target.style.color = '#c8ff00'; }} onMouseLeave={(e) => { e.target.style.color = 'rgba(255,255,255,0.35)'; }}>
+              {link}
+            </a>
+          ))}
         </div>
       </div>
-    </footer>
-  );
-};
+      <div style={{ textAlign: 'center', marginTop: 28, fontSize: 12, color: 'rgba(255,255,255,0.2)' }}>
+        © 2025 OffImage. Powered by Quantum Neural Networks.
+      </div>
+    </div>
+  </footer>
+);
 
-// Main App Component
+/* ─── Font + Global Styles ──────────────────────────────────────────── */
+const FontLoader = () => (
+  <style>{`
+    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600;700&display=swap');
+    * { font-family: 'Inter', sans-serif; box-sizing: border-box; margin: 0; padding: 0; }
+    ::placeholder { color: rgba(255,255,255,0.28) !important; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0d0d0d; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(200,255,0,0.3); }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+  `}</style>
+);
+
+/* ─── Main App ──────────────────────────────────────────────────────── */
 export default function App() {
   const [scrollY, setScrollY] = useState(0);
-
   useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    const handle = () => setScrollY(window.scrollY);
+    window.addEventListener('scroll', handle);
+    return () => window.removeEventListener('scroll', handle);
   }, []);
 
   return (
-    <div className="relative min-h-screen bg-slate-900 text-white overflow-x-hidden">
-      <CustomCursor />
-      <FloatingShapes />
-      {/* <Header /> */}
-      {/* <GlassNavigation /> */}
-      
-      <main className="relative z-10">
-        <HeroSection />
-        <InteractiveStats />
-        <FeaturesSection />
-        <Pricing />
-        <ContactSection />
-      </main>
-      
-      <Footer />
-    </div>
+    <>
+      <FontLoader />
+      <div style={{ position: 'relative', minHeight: '100vh', background: '#080808', color: '#fff', overflowX: 'hidden' }}>
+        <CustomCursor />
+        <AmbientBackground />
+        
+        
+
+        <main style={{ position: 'relative', zIndex: 10 }}>
+          <HeroSection />
+          <InteractiveStats />
+          <FeaturesSection />
+          <Pricing />
+          <ContactSection />
+        </main>
+
+        <Footer />
+      </div>
+    </>
   );
 }

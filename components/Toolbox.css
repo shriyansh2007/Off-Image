@@ -1,34 +1,190 @@
-.editor {
-  display: flex;
-  flex-flow: column;
-  height: 100vh;
-}
-
 .toolbox {
-  padding: 0.5em;
-  background-color: #414141;
+  width: 100%;
   display: flex;
-  gap: 0.5em;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px;
+  color: white;
 }
 
-/* .toolbox button {
-  width: 32px;
-  height: 32px;
-  position: relative;
-  font-size: 16px;
+/* Glass Cards */
+.toolbox > * {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 16px;
+  transition: all 0.3s ease;
+}
+
+.toolbox > *:hover {
+  border-color: rgba(200, 255, 0, 0.25);
+  box-shadow: 0 0 30px rgba(200, 255, 0, 0.08);
+}
+
+/* Labels */
+.toolbox label {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.65);
+  font-weight: 500;
+}
+
+/* Buttons */
+.toolbox button {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.05);
+  color: white;
+  transition: all .25s ease;
+  cursor: pointer;
+}
+
+.toolbox button:hover {
+  transform: translateY(-2px);
+  border-color: rgba(200,255,0,.35);
+  background: rgba(200,255,0,.08);
+}
+
+.toolbox button:active {
+  transform: scale(.98);
+}
+
+/* Primary Action Buttons */
+.toolbox button[title="Remove Background"],
+.toolbox button[title="Enhance Image"],
+.toolbox button[title="Download as image"] {
+  background: #C8FF00;
+  color: black;
   border: none;
-  background-color: #ccc;
-  border-radius: 0.2em;
-} */
-
-.canvasbox {
-  overflow: auto;
-  flex: 1;
-  background-color: #777;
+  font-weight: 600;
 }
 
-.canvasbox canvas {
-  width: 1000px;
-  height: 500px;
-   
+.toolbox button[title="Remove Background"]:hover,
+.toolbox button[title="Enhance Image"]:hover,
+.toolbox button[title="Download as image"]:hover {
+  background: #d9ff54;
+  box-shadow: 0 0 30px rgba(200,255,0,.3);
+}
+
+/* Color Inputs */
+.toolbox input[type="color"] {
+  width: 46px;
+  height: 46px;
+  border: none;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  background: transparent;
+}
+
+.toolbox input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 12px;
+}
+
+.toolbox input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+/* Range Sliders */
+.toolbox input[type="range"] {
+  width: 100%;
+  accent-color: #C8FF00;
+  cursor: pointer;
+}
+
+/* Select Dropdowns */
+.toolbox select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: white;
+  outline: none;
+}
+
+.toolbox select option {
+  background: #111111;
+  color: white;
+}
+
+/* File Input */
+.toolbox input[type="file"] {
+  width: 100%;
+  margin-top: 10px;
+  color: rgba(255,255,255,.7);
+}
+
+.toolbox input[type="file"]::file-selector-button {
+  background: rgba(200,255,0,.12);
+  color: #C8FF00;
+  border: 1px solid rgba(200,255,0,.2);
+  border-radius: 12px;
+  padding: 8px 14px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+/* Shape Dropdown */
+.toolbox .absolute {
+  background: #111111 !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+  backdrop-filter: blur(24px);
+  border-radius: 18px;
+  padding: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.45);
+}
+
+.toolbox .absolute button {
+  text-align: left;
+}
+
+/* Scrollbar */
+.toolbox::-webkit-scrollbar {
+  width: 8px;
+}
+
+.toolbox::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.toolbox::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,.12);
+  border-radius: 999px;
+}
+
+.toolbox::-webkit-scrollbar-thumb:hover {
+  background: rgba(200,255,0,.25);
+}
+
+/* Mobile */
+@media (max-width: 1024px) {
+  .toolbox {
+    padding: 14px;
+    gap: 14px;
+  }
+
+  .toolbox button {
+    min-height: 44px;
+    font-size: 14px;
+  }
+
+  .toolbox label {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .toolbox {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .toolbox > * {
+    border-radius: 20px;
+    padding: 14px;
+  }
 }
