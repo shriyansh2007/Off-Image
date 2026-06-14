@@ -85,62 +85,31 @@ const CustomCursor = () => {
 };
 
 /* ─── Ambient Background ───────────────────────────────────────────── */
-const AmbientBackground = () => {
-  const parallaxOffset = useParallax(0.15);
+const AmbientBackground = ({ scrollYProgress }) => {
+  const orb1Y = useTransform(scrollYProgress, [0, 1], [0, 90]);
+  const orb2Y = useTransform(scrollYProgress, [0, 1], [0, -70]);
+  const orb3X = useTransform(scrollYProgress, [0, 1], [0, 55]);
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none z-0" style={{ background: '#080808' }}>
-      <div style={{
+      <motion.div style={{
         position: 'absolute', width: '60vw', height: '60vw', top: '-10%', left: '-10%',
         borderRadius: '50%',
         background: 'radial-gradient(circle, rgba(139,92,246,0.07) 0%, transparent 70%)',
-        transform: `translateY(${parallaxOffset * 0.5}px)`,
+        y: orb1Y,
       }} />
-      <div style={{
+      <motion.div style={{
         position: 'absolute', width: '50vw', height: '50vw', bottom: '5%', right: '-5%',
         borderRadius: '50%',
         background: 'radial-gradient(circle, rgba(200,255,0,0.05) 0%, transparent 70%)',
-        transform: `translateY(${-parallaxOffset * 0.3}px)`,
+        y: orb2Y,
       }} />
-      <div style={{
+      <motion.div style={{
         position: 'absolute', width: '40vw', height: '40vw', top: '40%', left: '30%',
         borderRadius: '50%',
         background: 'radial-gradient(circle, rgba(139,92,246,0.04) 0%, transparent 70%)',
+        x: orb3X,
       }} />
     </div>
-  );
-};
-
-/* ─── Glass Nav ─────────────────────────────────────────────────────── */
-const GlassNavigation = () => {
-  const [activeSection, setActiveSection] = useState('home');
-  const navItems = ['Home', 'Features', 'Pricing', 'Contact'];
-  const scrollToSection = (section) => {
-    const el = document.getElementById(section.toLowerCase());
-    if (el) { el.scrollIntoView({ behavior: 'smooth' }); setActiveSection(section.toLowerCase()); }
-  };
-  return (
-    <nav style={{
-      position: 'fixed', top: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 40,
-      backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
-      background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
-      borderRadius: 9999, padding: '10px 28px',
-    }}>
-      <ul style={{ display: 'flex', gap: 28, listStyle: 'none', margin: 0, padding: 0 }}>
-        {navItems.map((item) => (
-          <li key={item}>
-            <button onClick={() => scrollToSection(item)} className="hoverable" style={{
-              background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500,
-              letterSpacing: '0.03em',
-              color: activeSection === item.toLowerCase() ? '#c8ff00' : 'rgba(255,255,255,0.5)',
-              transition: 'color 0.3s ease', padding: '2px 0',
-            }}
-              onMouseEnter={(e) => { if (activeSection !== item.toLowerCase()) e.target.style.color = 'rgba(255,255,255,0.85)'; }}
-              onMouseLeave={(e) => { if (activeSection !== item.toLowerCase()) e.target.style.color = 'rgba(255,255,255,0.5)'; }}
-            >{item}</button>
-          </li>
-        ))}
-      </ul>
-    </nav>
   );
 };
 
@@ -172,10 +141,15 @@ const AnimatedCounter = ({ target, duration = 2000, suffix = '' }) => {
 };
 
 /* ─── Hero Section ──────────────────────────────────────────────────── */
-const HeroSection = () => {
+const HeroSection = ({ scrollYProgress }) => {
   const [glitchActive, setGlitchActive] = useState(false);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const demoRef = useRef(null);
+  const parallaxFloat = useParallax(0.03);
+  const heroMove = useTransform(scrollYProgress, [0, 0.24], [0, -48]);
+  const heroScale = useTransform(scrollYProgress, [0, 0.28], [1, 0.96]);
+  const gridMove = useTransform(scrollYProgress, [0, 0.25], [0, -22]);
+  const gridRotate = useTransform(scrollYProgress, [0, 0.25], [0, 5]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -196,10 +170,12 @@ const HeroSection = () => {
   const handleMouseLeave = useCallback(() => setTilt({ x: 0, y: 0 }), []);
 
   return (
-    <section id="home" style={{
+    <motion.section id="home" style={{
       position: 'relative', minHeight: '100vh',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       overflow: 'hidden', padding: '80px 20px 40px',
+      y: heroMove,
+      scale: heroScale,
     }}>
       <div style={{ maxWidth: 1100, width: '100%', margin: '0 auto', position: 'relative', zIndex: 10 }}>
         <motion.div
@@ -272,7 +248,7 @@ const HeroSection = () => {
             </button>
             <button className="hoverable" style={{
               padding: '14px 32px', background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(12px)',
-              color: 'rgba(255,255,255,0.8)', border: '1px solid rgba(255,255,255,0.1)',
+              color: 'rgba(255,255,255,0.8)', borderWidth: '1px', borderStyle: 'solid', borderColor: 'rgba(255,255,255,0.1)',
               borderRadius: 9999, fontSize: 15, fontWeight: 600, cursor: 'pointer', transition: 'all 0.25s ease',
             }}
               onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; }}
@@ -293,8 +269,10 @@ const HeroSection = () => {
             className="hoverable"
             style={{
               maxWidth: 860, margin: '0 auto',
-              transform: `perspective(1200px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
+              transform: `perspective(1200px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) translateY(${parallaxFloat}px)`,
               transition: 'transform 0.25s ease-out',
+              y: gridMove,
+              rotate: gridRotate,
             }}
           >
             <div style={{
@@ -374,7 +352,7 @@ const HeroSection = () => {
           </motion.div>
         </motion.div>
       </div>
-    </section>
+    </motion.section>
   );
 };
 
@@ -477,7 +455,7 @@ const ContactSection = () => {
   const handleSubmit = (e) => { e.preventDefault(); console.log('Form submitted:', formData); };
   const inputStyle = {
     width: '100%', padding: '14px 18px', background: 'rgba(255,255,255,0.04)',
-    border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, color: '#fff', fontSize: 15,
+    borderWidth: '1px', borderStyle: 'solid', borderColor: 'rgba(255,255,255,0.08)', borderRadius: 14, color: '#fff', fontSize: 15,
     outline: 'none', transition: 'border-color 0.25s ease', boxSizing: 'border-box', fontFamily: 'inherit',
   };
   return (
@@ -555,16 +533,37 @@ const FontLoader = () => (
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
     }
+    /* Ensure payment panels / auth modals render above the fixed navbar and containers */
+    dialog, [role="dialog"], [aria-modal="true"], .clerk-modal, .clerk-portal, .clerk-root, .clerk-dialog, .ClerkModal, .clerk-modal__overlay {
+      position: fixed !important;
+      z-index: 99999 !important;
+      top: 0 !important;
+      left: 0 !important;
+    }
+    /* Fallback for any portal-like element created by 3rd-party widgets */
+    [data-portal], [data-clerk-portal], .portal-root {
+      position: fixed !important;
+      z-index: 99999 !important;
+    }
   `}</style>
 );
 
 /* ─── Main App ──────────────────────────────────────────────────────── */
 export default function App() {
-  const [scrollY, setScrollY] = useState(0);
+  const { scrollYProgress } = useScroll();
+
   useEffect(() => {
-    const handle = () => setScrollY(window.scrollY);
-    window.addEventListener('scroll', handle);
-    return () => window.removeEventListener('scroll', handle);
+    // Handle query parameter navigation from other pages
+    const params = new URLSearchParams(window.location.search);
+    const section = params.get('section');
+    if (section) {
+      setTimeout(() => {
+        const element = document.getElementById(section);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    }
   }, []);
 
   return (
@@ -572,12 +571,10 @@ export default function App() {
       <FontLoader />
       <div style={{ position: 'relative', minHeight: '100vh', background: '#080808', color: '#fff', overflowX: 'hidden' }}>
         <CustomCursor />
-        <AmbientBackground />
-        
-        
+        <AmbientBackground scrollYProgress={scrollYProgress} />
 
         <main style={{ position: 'relative', zIndex: 10 }}>
-          <HeroSection />
+          <HeroSection scrollYProgress={scrollYProgress} />
           <InteractiveStats />
           <FeaturesSection />
           <Pricing />

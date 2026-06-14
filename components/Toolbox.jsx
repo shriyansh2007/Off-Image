@@ -1,8 +1,10 @@
+'use client';
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Image as FabricImage, IText, PencilBrush } from 'fabric';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faImage, faFont, faPencil, faDownload } from "@fortawesome/free-solid-svg-icons";
+import { faImage, faFont, faPencil, faDownload, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import { useState, useEffect, useRef } from 'react';
 import { applyBrightness, applyContrast, applyBlur, applyGrayscale, applyInvert, applySaturation } from '@/lib/filters';
 import { createShape, shapeOptions } from '@/lib/elements';
@@ -104,7 +106,9 @@ const S = {
     width: '100%',
     padding: '10px 14px',
     borderRadius: '8px',
-    border: '1px solid rgba(255,255,255,0.09)',
+    borderWidth: '1px',
+    borderStyle: 'solid',
+    borderColor: 'rgba(255,255,255,0.09)',
     background: 'rgba(255,255,255,0.05)',
     color: '#e8e8e8',
     fontSize: '13px',
@@ -116,20 +120,42 @@ const S = {
     position: 'relative',
     overflow: 'hidden',
   },
+  backButton: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '8px 12px',
+    borderRadius: '10px',
+    borderWidth: '1px',
+    borderStyle: 'solid',
+    borderColor: 'rgba(255,255,255,0.12)',
+    background: 'rgba(255,255,255,0.08)',
+    color: '#fff',
+    fontSize: '12px',
+    fontWeight: 600,
+    cursor: 'pointer',
+    textTransform: 'uppercase',
+    letterSpacing: '0.04em',
+  },
   actionBtnAccent: {
     background: '#c8ff00',
     color: '#080808',
-    border: 'none',
+    borderWidth: '0',
+    borderStyle: 'none',
     fontWeight: 700,
   },
   actionBtnActive: {
     background: 'rgba(200,255,0,0.12)',
-    border: '1px solid rgba(200,255,0,0.4)',
+    borderWidth: '1px',
+    borderStyle: 'solid',
+    borderColor: 'rgba(200,255,0,0.4)',
     color: '#c8ff00',
   },
   actionBtnDanger: {
     background: 'rgba(139,92,246,0.10)',
-    border: '1px solid rgba(139,92,246,0.25)',
+    borderWidth: '1px',
+    borderStyle: 'solid',
+    borderColor: 'rgba(139,92,246,0.25)',
     color: '#c4b5fd',
   },
 
@@ -195,7 +221,9 @@ const S = {
   shapePill: {
     padding: '7px 12px',
     borderRadius: '20px',
-    border: '1px solid rgba(255,255,255,0.09)',
+    borderWidth: '1px',
+    borderStyle: 'solid',
+    borderColor: 'rgba(255,255,255,0.09)',
     background: 'rgba(255,255,255,0.04)',
     color: '#ccc',
     fontSize: '12px',
@@ -215,7 +243,9 @@ const S = {
   select: {
     flex: 1,
     background: 'rgba(255,255,255,0.05)',
-    border: '1px solid rgba(255,255,255,0.09)',
+    borderWidth: '1px',
+    borderStyle: 'solid',
+    borderColor: 'rgba(255,255,255,0.09)',
     borderRadius: '8px',
     color: '#e8e8e8',
     fontSize: '12px',
@@ -345,6 +375,7 @@ const ActionBtn = ({ onClick, children, variant, style: extra }) => {
 
 /* ─── main component ──────────────────────────────────────────── */
 const Toolbox = ({ canvas, project }) => {
+  const router = useRouter();
   const [color, setColor] = useState("#000000");
   const [textColor, setTextColor] = useState("#000000");
   const [fontFamily, setFontFamily] = useState("Arial");
@@ -614,9 +645,15 @@ const Toolbox = ({ canvas, project }) => {
 
         {/* ── Header ── */}
         <div style={S.header}>
-          <span style={S.logo}>
-            Off<span style={S.logoAccent}>Image</span>
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <button type="button" onClick={() => router.push('/dashboard')} style={S.backButton}>
+              <FontAwesomeIcon icon={faArrowLeft} />
+              Back to dashboard
+            </button>
+            <span style={S.logo}>
+              Off<span style={S.logoAccent}>Image</span>
+            </span>
+          </div>
           <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.04em' }}>
             {project?.name || 'Untitled project'}
           </span>

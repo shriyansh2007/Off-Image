@@ -121,8 +121,15 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    scroll-behavior: smooth;
+  }
   body {
     @apply bg-background text-foreground;
+    overscroll-behavior-y: smooth;
+  }
+  section {
+    scroll-margin-top: 5rem;
   }
   html {
     @apply font-sans;
